@@ -1,0 +1,4 @@
+compprog
+========
+
+competitive programming library
