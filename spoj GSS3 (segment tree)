@@ -1,0 +1,118 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long int a[50010];
+
+int n,m;
+struct stuff
+{
+	long long int best,bestleft,bestright,sum;
+	
+}st[200010];
+stuff combine(stuff a, stuff b)
+{
+	stuff ret;
+	ret.best = max(a.best,b.best);
+	ret.best =max(ret.best,a.bestright+b.bestleft);
+	ret.bestright=max(a.bestright+b.sum,b.bestright);
+	ret.bestleft=max(a.bestleft,a.sum+b.bestleft);
+	ret.sum=a.sum+b.sum;
+	return ret;
+}
+void maketree(int node=1, int l=0, int r=n-1)
+{
+	if(r==l){st[node].best=st[node].bestright = st[node].bestleft = st[node].sum=a[l];return;}
+	maketree(node*2,l,(l+r)/2);
+	maketree(node*2 +1, 1+(l+r)/2,r);
+	st[node]=combine(st[node*2],st[node*2+1]);
+}
+//query from i to j, i and j 0-indexed
+stuff querytree(int i, int j, int node=1, int l=0, int r=n-1)
+{
+	//cout<<i<<" "<<j<<" "<<l<<" "<<r<<" "<<node<<endl;
+	stuff retval;
+	if(j<l||r<i){cout<<1/0;retval.sum=retval.bestleft=retval.bestright=retval.best=-1000000;return retval;}
+	if((l>=i && r<=j)){retval.best=st[node].best,retval.bestleft=st[node].bestleft,retval.bestright=st[node].bestright,retval.sum=st[node].sum;return retval;}
+	stuff left,right;
+	if((l+r)/2 < i)return querytree(i,j,node*2 + 1, 1+(l+r)/2,r);
+	else if((l+r)/2 + 1>j)return querytree(i,j,node*2,l,(l+r)/2);
+	 left = querytree(i,j,node*2,l,(l+r)/2);
+	 right = querytree(i,j,node*2 + 1, 1+(l+r)/2,r);
+	retval = combine(left,right);
+	
+	
+	return retval;
+}
+stuff modify(int i, long long int val, int node=1, int l=0, int r=n-1)
+{
+	stuff retval;
+	if(l==r)
+	{
+		retval.best=retval.bestleft=retval.bestright=retval.sum=val;
+		st[node]=retval;
+		return retval;
+	}
+	int mid = (l+r)/2;
+	stuff child;
+	if(i<=mid)
+	{
+		child=modify(i,val,node*2,l,mid);
+		st[node]=combine(child,st[node*2 +1]);
+	}
+	else
+	{
+		child=modify(i,val,node*2 +1,mid+1,r);
+		st[node]=combine(st[node*2],child);
+	}
+	return st[node];
+		
+}
+int main() {
+	// your code goes here
+
+	scanf("%d",&n);
+	for(int i=0;i<n;++i)scanf("%lld",a+i);
+	maketree();
+	/*
+	//print 
+	for(int i=1;i<n*3;++i)
+	{
+		cout<<st[i].best<<" ";
+	}
+	cout<<"\n";
+	for(int i=1;i<n*3;++i)
+	{
+		cout<<st[i].bestleft<<" ";
+	}
+	cout<<"\n";
+	for(int i=1;i<n*3;++i)
+	{
+		cout<<st[i].bestright<<" ";
+	}
+	cout<<"\n";
+	for(int i=1;i<n*3;++i)
+	{
+		cout<<st[i].sum<<" ";
+	}
+	cout<<"\n";
+	*/
+	scanf("%d",&m);
+	int i,j,k;
+	for(int ii=0;ii<m;++ii)
+	{
+		scanf("%d%d%d",&k,&i,&j);
+		
+		if(k==1)
+		{
+			--i;--j;
+			printf("%d\n",querytree(i,j).best);
+		}
+		else
+		{	
+			--i;
+			modify(i,j);
+			
+		}
+	}
+	return 0;
+}
+
