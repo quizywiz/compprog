@@ -1,0 +1,65 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define rep(i,a,b) for(i=a;i<b;++i)
+#define repi(i,a,b) for(int i=a;i<b;++i)
+#define F first
+#define S second
+#define mp(a,b) make_pair(a,b)
+#define pii pair<int,int>
+#define ppi pair<pii,int>
+#define ppp pair<pii,pii>
+#define vi vector<int>
+#define sc(a) scanf("%d",&a)
+#define pb(a) push_back(a)
+
+vector<int> tree[100001]; 
+unordered_map<int,int> wt[100001];
+int lea=0;
+//map<pii,int> wt;
+void dfs(int i, int j) {
+    
+    int w = 0;
+    for(int x: tree[j]) {
+        if(x==i)continue;
+        if(wt[j][x] == -1)dfs(j,x);
+        w += wt[j][x];
+    }
+    wt[i][j] = w;
+    wt[j][i] = lea - w;
+}
+int main() {
+    int n;
+    sc(n);
+    repi(i,0,n-1) {
+        int x,y;
+        sc(x);sc(y);
+        --x;--y;
+        tree[x].pb(y);
+        tree[y].pb(x);
+        wt[x][y] = -1;
+        wt[y][x] = -1;
+    }
+    repi(i,0,n) if(tree[i].size()==1) {
+        wt[tree[i][0]][i] = 1;
+        ++lea;
+    }
+    repi(i,0,n) if(tree[i].size()==1) {
+        wt[i][tree[i][0]] = lea - 1;
+        
+    }
+    bool can = true;
+    repi(i,0,n) {
+        int cnt = 0;
+        for(int x : tree[i]) {
+            if(wt[i][x] == -1) dfs(i,x);
+            if(wt[i][x] >= 3 || (wt[i][x]==2 && tree[x].size()==2))++cnt;
+    //      cout<<1+i<<" "<<1+x<<" "<<wt[mp(i,x)]<<endl;
+        }
+        if(cnt>=3) {
+            can  =false;
+        }
+    }
+    if(can) printf("Yes\n");
+    else printf("No\n");
+    return 0;
+}
