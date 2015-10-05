@@ -1,0 +1,110 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define rep(i,a,b) for(i=a;i<b;++i)
+#define repi(i,a,b) for(int i=a;i<b;++i)
+#define F first
+#define S second
+#define mp(a,b) make_pair(a,b)
+#define pii pair<int,int>
+#define ppi pair<pii,int>
+#define ppp pair<pii,pii>
+#define vi vector<int>
+#define sc(a) scanf("%d",&a)
+#define pb(a) push_back(a)
+int diam[300001];
+class DSU{
+	public:
+	int p[300001];
+	int rank[300001];
+	void create(int x) {
+		p[x] = x;
+		rank[x] = 0;
+	}
+	int find(int x) {
+		if(x!=p[x]) p[x] = find(p[x]);
+		return p[x];
+	}
+	void merge(int x, int y) {
+		int px = find(x);
+		int py = find(y);
+		if(rank[px]>rank[py]) {
+			p[py] = px;
+		}
+		else p[px] = py;
+		if(rank[px]==rank[py]) rank[py] ++;
+	}
+};
+
+
+
+int ex[300001];
+int exb[300001];
+
+unordered_set<int> g[300001];
+int n,m,q;
+int maxd = 0;
+int last=0;
+void dfs(int a, int p) {
+	ex[a] = 1;
+	if(p==-1) {exb[a] = 0;last = a;}
+	if(maxd < exb[a]) {
+		maxd = exb[a];
+		last = a;
+	}
+	for(int i : g[a]) {
+		if(i!=p) {
+			exb[i] = exb[a] + 1;
+			
+			dfs(i,a);
+		}
+	}
+}
+int dia(int x) {
+	maxd=0;
+	dfs(x,-1);
+	
+	dfs(last, -1);
+	return maxd;
+}
+DSU dsu;
+int main() {
+	// your code goes here
+	sc(n);sc(m);sc(q);
+	
+	repi(i,1,n+1) dsu.create(i);
+	repi(i,0,m) {
+		int x,y;
+		sc(x);sc(y);
+		g[x].insert(y);
+		g[y].insert(x);
+		dsu.merge(x,y);
+	}
+	
+	
+	for(int i=1;i<=n;++i) if(!ex[i]) {
+		int d = dia(i);
+		int p = dsu.find(i);
+		diam[p] = d;
+	//	cout<<p<<" "<<diam[p]<<endl;
+	}
+	
+	repi(i,0,q) {
+		int x,y,qt;
+		sc(qt);
+		if(qt==1) {
+			sc(x);
+			int p = dsu.find(x);
+			printf("%d\n",diam[p]);
+		} else {
+			sc(x);sc(y);
+			if(dsu.find(x)==dsu.find(y)) continue;
+			int p1 = dsu.find(x);
+			int p2 = dsu.find(y);
+			dsu.merge(x,y);
+			int p = dsu.find(x);
+			diam[p] = max(max(diam[p1],diam[p2]),(diam[p1]+1)/2 + (diam[p2]+1)/2 + 1);
+	//		cout<<"merge "<<x<<" and "<<y<<" diam now "<<diam[p]<<endl;
+		}
+	}
+	return 0;
+}
