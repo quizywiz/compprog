@@ -70,6 +70,10 @@ class LazyNode {
 	bool operator==(LazyNode& b) {
 		return this->sum == b.sum;
 	}
+	
+	bool operator=(LazyNode b) {
+		this->sum = b.sum;
+	}
 };
 
 const int MAXN = 100001;//CODE~
@@ -109,7 +113,7 @@ class SegTree {
 				lazy[node*2 + 1] = LazyNode::merge(lazy[node*2 + 1], right);
 			}
 			
-			lazy[node].sum = ZEROL.sum;
+			lazy[node] = ZEROL;
 		}
 		
 		if(a > b || a > j || b < i) {
@@ -151,7 +155,7 @@ class SegTree {
 				lazy[node*2 + 1] = LazyNode::merge(lazy[node*2 + 1], right);
 			}
 			
-			lazy[node].sum = ZEROL.sum;
+			lazy[node] = ZEROL;
 		}
 		
 		if(a >= i && b <= j) 
