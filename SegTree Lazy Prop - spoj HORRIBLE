@@ -1,0 +1,213 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define rep(i,a,b) for(i=a;i<b;++i)
+#define repi(i,a,b) for(int i=a;i<b;++i)
+#define F first
+#define S second
+#define mp(a,b) make_pair(a,b)
+#define pii pair<int,int>
+#define ppi pair<pii,int>
+#define ppp pair<pii,pii>
+#define vi vector<int>
+#define sc(a) scanf("%d",&a)
+#define pb(a) push_back(a)
+
+//currently is for range sum query and range a[l..r] += k update
+class Node {
+	public:
+	//data for node
+	//CODE~
+	long long int sum;
+	
+	//merge children to get parent
+	static Node merge(Node& a, Node& b) {
+		//CODE~
+		Node res;
+		res.sum = a.sum + b.sum;
+		return res;
+	}
+	bool operator==(Node& b) {
+		return this->sum == b.sum;
+	}
+};
+
+class LazyNode {
+	public:
+	//info stored lazily
+	//CODE~
+	long long int sum;
+	int l; int r;
+	
+	//split lazy of parent to get children
+	static void split(LazyNode& p, LazyNode& c1, LazyNode& c2) {
+		//CODE~
+		int m = p.l + p.r;
+		m/=2;
+		c1.l = p.l;
+		c1.r = m;
+		c2.l = m+1;
+		c2.r = p.r;
+		c1.sum = c2.sum = p.sum;
+	}
+	
+	//merge node with its lazy value
+	static Node merge_lazy(Node& a, LazyNode& laze) {
+		//CODE~
+		Node res;
+		res.sum = a.sum + laze.sum*(laze.r+1-laze.l);
+		return res;
+	}
+	
+	static LazyNode merge(LazyNode& a, LazyNode& b) {
+		//CODE~
+		LazyNode res;
+		res.sum = a.sum + b.sum;
+		res.l = a.l;
+		res.r = a.r;
+		return res;
+	}
+	
+	bool operator==(LazyNode& b) {
+		return this->sum == b.sum;
+	}
+};
+
+const int MAXN = 100001;//CODE~
+class SegTree {
+	
+	int n;
+	Node tree[4*MAXN];
+	LazyNode lazy[4*MAXN];
+	Node *ini;
+	Node ZERO;//merge(a,zero) = a. split(zero) = zero,zero
+	LazyNode ZEROL;//lazy node == zerol if no lazy
+	
+	void build_tree(int node, int l, int r) {
+		if(l>r) return;
+		lazy[node].l = l;
+		lazy[node].r = r;
+		if(l==r) {
+			tree[node] = ini[l];
+			
+			return;
+		}
+		
+		build_tree(node*2, l, (l+r)/2);
+		build_tree(node*2+1, (l+r)/2 + 1, r);
+		
+		tree[node] = Node::merge(tree[node*2], tree[node*2 + 1]);
+	}
+	
+	void update_tree(int i, int j, LazyNode value, 
+			int node, int a, int b) {
+		if(!(lazy[node] == ZEROL)) {
+			tree[node] = LazyNode::merge_lazy(tree[node], lazy[node]);
+			if(a != b) {
+				LazyNode left, right;
+				LazyNode::split(lazy[node], left, right);
+				lazy[node*2] = LazyNode::merge(lazy[node*2], left);
+				lazy[node*2 + 1] = LazyNode::merge(lazy[node*2 + 1], right);
+			}
+			
+			lazy[node].sum = ZEROL.sum;
+		}
+		
+		if(a > b || a > j || b < i) {
+			return;
+		}
+		if(a >= i && b <= j) {
+			//CODE~
+			//change how node is updated, right now just merged with value node
+			value.l = a;
+			value.r = b;
+			tree[node] = LazyNode::merge_lazy(tree[node], value);
+			
+			if(a != b) {
+				//CODE~
+				lazy[node*2] = LazyNode::merge(lazy[node*2], value);
+				lazy[node*2 + 1] = LazyNode::merge(lazy[node*2 + 1], value);
+			}
+			
+			return;
+		}
+		
+		//CODE~ value
+		update_tree(i, j, value, node*2, a, (a+b)/2);
+		update_tree(i, j, value, node*2 + 1, (a+b)/2 + 1, b);
+		
+		tree[node] = Node::merge(tree[node*2], tree[node*2 + 1]);
+	}
+	
+	Node query_tree(int i, int j, int a, int b, int node) {
+		if(a>b || a>j || b<i) return ZERO;
+		
+		if(!(lazy[node] == ZEROL)) {
+			tree[node] = LazyNode::merge_lazy(tree[node], lazy[node]);
+			if(a != b) {
+				LazyNode left,right;
+				LazyNode::split(lazy[node], left, right);
+				
+				lazy[node*2] = LazyNode::merge(lazy[node*2], left);
+				lazy[node*2 + 1] = LazyNode::merge(lazy[node*2 + 1], right);
+			}
+			
+			lazy[node].sum = ZEROL.sum;
+		}
+		
+		if(a >= i && b <= j) 
+			return tree[node];
+			
+		Node q1 = query_tree(i,j,a,(a+b)/2, node*2);
+		Node q2 = query_tree(i,j,1 + (a+b)/2, b, node*2 + 1);
+		
+		return Node::merge(q1,q2);
+	}
+	
+	public:
+	//give null if initially everything zero
+	void create(Node* a, int n) {
+		//CODE~ for zero
+		ZERO.sum = 0;
+		ZEROL.sum = 0;
+		
+		this->n = n;
+		if(a==NULL) return;
+		ini = a;
+		for(int i=1;i<=4*n;++i)lazy[i] = ZEROL;
+		build_tree(1,1,n);
+	}
+	void update(int i, int j, LazyNode value) {
+		update_tree(i,j, value, 1, 1, n);
+	}
+	Node query(int i, int j) {
+		return query_tree(i,j,1,n,1);
+	}
+};
+
+SegTree st;
+Node a[100001];
+int main() {
+	int n,c,p,q,v,x,t;
+	sc(t);
+	while(t--) {
+		sc(n);sc(c);
+		st.create(a,n);
+		repi(i,0,c) {
+			sc(x);
+			if(x==0) {
+				sc(p);sc(q);sc(v);
+				LazyNode val;
+				val.sum = v;
+				val.l = p;
+				val.r = q;
+				st.update(p,q,val);
+			} else {
+				sc(p);
+				sc(q);
+				cout<<st.query(p,q).sum<<endl;
+			}
+		}
+	}
+		
+	return 0;
+}
