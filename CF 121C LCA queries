@@ -1,0 +1,120 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define rep(i,a,b) for(i=a;i<b;++i)
+#define repi(i,a,b) for(int i=a;i<b;++i)
+#define F first
+#define S second
+#define mp(a,b) make_pair(a,b)
+#define pii pair<int,int>
+#define ppi pair<pii,int>
+#define ppp pair<pii,pii>
+#define vi vector<int>
+#define sc(a) scanf("%d",&a)
+#define pb(a) push_back(a)
+#define pr(a) printf("%d",a)
+#define prn(a) printf("%d\n",a)
+#define scll(a) scanf("%lld",&a)
+#define prll(a) printf("%lld",a)
+#define prlln(a) printf("%lld\n",a)
+typedef long long LL;
+#define MAXN 100000
+#define LOGMAXN 17
+int T[MAXN+1];
+int P[MAXN+1][LOGMAXN+1];
+int L[MAXN+1];
+vi g[MAXN+1];
+int dep(int root, int p, int d=0) {
+	L[root] = d;
+	T[root] = p;
+	for(auto x : g[root]) {
+		if(x!=T[root]) 
+			dep(x, root, d+1);
+	}
+}
+void process3(int N) {
+      int i, j;
+   dep(1,-1,0);
+   
+  //we initialize every element in P with -1
+      for (i = 1; i <= N; i++)
+          for (j = 0; 1 << j < N; j++)
+              P[i][j] = -1;
+   
+  //the first ancestor of every node i is T[i]
+      for (i = 1; i <= N; i++)
+          P[i][0] = T[i];
+   
+  //bottom up dynamic programing
+      for (j = 1; 1 << j < N; j++)
+         for (i = 1; i <= N; i++)
+             if (P[i][j - 1] != -1)
+                 P[i][j] = P[P[i][j - 1]][j - 1];
+}
+
+int query(int N, int p, int q) {
+      int tmp, log, i;
+   
+  //if p is situated on a higher level than q then we swap them
+      if (L[p] < L[q])
+          tmp = p, p = q, q = tmp;
+  
+  //we compute the value of [log(L[p)]
+      for (log = 1; 1 << log <= L[p]; log++);
+      log--;
+   
+  //we find the ancestor of node p situated on the same level
+  //with q using the values in P
+      for (i = log; i >= 0; i--)
+          if (L[p] - (1 << i) >= L[q])
+              p = P[p][i];
+   
+      if (p == q)
+          return p;
+   
+  //we compute LCA(p, q) using the values in P
+      for (i = log; i >= 0; i--)
+          if (P[p][i] != -1 && P[p][i] != P[q][i])
+              p = P[p][i], q = P[q][i];
+   
+      return T[p];
+}
+int n,k;
+int add[MAXN+1],rem[MAXN+1];
+map<pii,long long> m;
+pii ed[MAXN+1];
+long long dodfs(int r, int p) {
+	long long sum = 0;
+	for(int x: g[r]) if(x!=p) {
+		m[mp(r,x)] = dodfs(x,r);
+		sum += m[mp(r,x)];
+	}
+	sum += add[r] - rem[r];
+	return sum;
+}
+int main() {
+	// your code goes here
+	sc(n);
+
+	repi(i,0,n-1) {
+		int x,y;
+		sc(x);sc(y);
+		g[x].pb(y);
+		g[y].pb(x);
+		ed[i]=mp(x,y);
+	}
+	process3(n);
+	sc(k);
+	repi(i,0,k) {
+		int x,y;
+		sc(x);sc(y);
+		int l = query(n,x,y);
+		add[x]++;
+		add[y]++;
+		rem[l]+=2;
+	}
+	dodfs(1,0);
+	repi(i,0,n-1) cout<<(m.count(ed[i])?m[ed[i]]:m[mp(ed[i].S,ed[i].F)])<<" ";
+	cout<<endl;
+//	repi(i,1,n+1) cout<<add[i]<<" "<<rem[i]<<endl;
+	return 0;
+}
